@@ -1,0 +1,67 @@
+void CMWCSPExampleDlg::OnConnectCSP() 
+{
+	m_list.ResetContent();
+	HCRYPTPROV hProv = 0;
+	BYTE *pbData = NULL;
+	char bData[1000] ={0};
+	DWORD cbData;
+	OutputString("\n");
+	OutputString("*枚举容器测试");
+	OutputString("\n");
+	//连接我们的CSP容器
+	if(!CryptAcquireContext(&hProv, NULL, strCSPName, PROV_RSA_FULL , 0))
+	{
+		sprintf(g_buff,"连接到CSP的容器：连接失败！错误码是： %x !\n", GetLastError());
+		OutputString(g_buff);
+		return ;
+	}
+	else
+	{
+		
+		sprintf(g_buff,"连接到CSP的容器：连接成功！\n");
+		OutputString(g_buff);
+	}
+	// 枚举所有容器
+	sprintf(g_buff,"开始枚举容器的名字：\n");
+	OutputString(g_buff);
+	for ( int i =0;i<8;i++)
+	{
+		if(CryptGetProvParam(hProv, PP_ENUMCONTAINERS, NULL, &cbData, 0)) 
+		{
+			pbData = (BYTE*)malloc(cbData);
+			if(pbData == NULL)
+			{
+				OutputString("内存分配失败");
+				CryptReleaseContext(hProv, 0);
+				OutputString("释放容器\n");	
+				return;
+			}
+		}
+		if(!CryptGetProvParam(hProv, PP_ENUMCONTAINERS, pbData, &cbData, 0)) 
+		{
+			
+			if(GetLastError() == ERROR_NO_MORE_ITEMS) 
+			{
+				// Exit the loop.
+				
+				break;
+			}
+			else
+			{
+				OutputString("枚举失败！\n");
+				CryptReleaseContext(hProv, 0);
+				OutputString("释放容器\n");
+				return;
+			}
+		}
+		//显示所有容器名字
+		//*(pbData+cbData) = '\0';  //取出来的容器名字不是字符串吗？还要加结尾字符？不加试试
+		OutputString((char*)pbData);
+	}
+	OutputString("枚举完毕！\n");
+	CryptReleaseContext(hProv, 0);
+	OutputString("释放容器\n");
+	OutputString("\n");
+	OutputString("*功能测试正确！\n");
+	return;
+}
